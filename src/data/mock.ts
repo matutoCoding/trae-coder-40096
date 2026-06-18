@@ -1,0 +1,283 @@
+import type { Instrument, RateTable, Booking, WaitlistEntry, Bill, User, Notification } from "@/types"
+
+export const mockUser: User = {
+  id: "u001",
+  name: "张明远",
+  department: "化学与化工学院",
+  avatar: "",
+  qualifications: [
+    { id: "q001", name: "光谱分析仪操作证", level: "高级", instrumentCategories: ["光谱分析"], expiresAt: "2027-06-30" },
+    { id: "q002", name: "色谱仪操作证", level: "中级", instrumentCategories: ["色谱分析"], expiresAt: "2026-12-31" },
+  ],
+  role: "instrument_admin",
+}
+
+export const mockInstruments: Instrument[] = [
+  {
+    id: "inst001",
+    name: "X射线衍射仪",
+    model: "Rigaku SmartLab",
+    category: "光谱分析",
+    location: "科技楼A302",
+    status: "available",
+    imageUrl: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=X-ray%20diffractometer%20in%20modern%20laboratory%2C%20professional%20scientific%20equipment%2C%20clean%20white%20background&image_size=landscape_4_3",
+    description: "高分辨X射线衍射仪，适用于物相分析、薄膜表征、应力测量等",
+    requiredQualification: ["光谱分析仪操作证"],
+    rateTableId: "rt001",
+  },
+  {
+    id: "inst002",
+    name: "场发射扫描电镜",
+    model: "ZEISS GeminiSEM 500",
+    category: "显微成像",
+    location: "科技楼B201",
+    status: "in_use",
+    imageUrl: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Field%20Emission%20Scanning%20Electron%20Microscope%20in%20lab%2C%20professional%20scientific%20equipment&image_size=landscape_4_3",
+    description: "高分辨场发射扫描电子显微镜，分辨率可达0.6nm",
+    requiredQualification: ["电镜操作证"],
+    rateTableId: "rt002",
+  },
+  {
+    id: "inst003",
+    name: "高效液相色谱仪",
+    model: "Agilent 1260 Infinity II",
+    category: "色谱分析",
+    location: "化学楼C105",
+    status: "available",
+    imageUrl: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=HPLC%20liquid%20chromatography%20system%20in%20chemistry%20lab%2C%20modern%20analytical%20instrument&image_size=landscape_4_3",
+    description: "高效液相色谱仪，适用于药物分析、环境检测、食品安全等",
+    requiredQualification: ["色谱仪操作证"],
+    rateTableId: "rt003",
+  },
+  {
+    id: "inst004",
+    name: "电感耦合等离子体质谱仪",
+    model: "Thermo iCAP RQ",
+    category: "质谱分析",
+    location: "分析测试中心D401",
+    status: "maintenance",
+    imageUrl: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=ICP-MS%20mass%20spectrometer%20in%20analytical%20laboratory%2C%20professional%20equipment&image_size=landscape_4_3",
+    description: "高灵敏度ICP-MS，可检测ppb级微量元素",
+    requiredQualification: ["质谱操作证", "辐射安全培训证"],
+    rateTableId: "rt004",
+  },
+  {
+    id: "inst005",
+    name: "万能材料试验机",
+    model: "Instron 5967",
+    category: "力学测试",
+    location: "材料学院E203",
+    status: "available",
+    imageUrl: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Universal%20testing%20machine%20for%20materials%2C%20mechanical%20testing%20equipment%20in%20lab&image_size=landscape_4_3",
+    description: "双立柱万能材料试验机，最大载荷30kN",
+    requiredQualification: [],
+    rateTableId: "rt005",
+  },
+  {
+    id: "inst006",
+    name: "电化学工作站",
+    model: "CHI 760E",
+    category: "电化学分析",
+    location: "化学楼C203",
+    status: "available",
+    imageUrl: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Electrochemical%20workstation%20in%20chemistry%20lab%2C%20potentiostat%20equipment&image_size=landscape_4_3",
+    description: "电化学工作站，支持循环伏安、交流阻抗等多种电化学测量",
+    requiredQualification: [],
+    rateTableId: "rt006",
+  },
+]
+
+export const mockRateTables: RateTable[] = [
+  {
+    id: "rt001",
+    instrumentId: "inst001",
+    rates: [
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 8, endHour: 12, rateType: "peak", pricePerHour: 200 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 12, endHour: 14, rateType: "off_peak", pricePerHour: 80 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 14, endHour: 18, rateType: "standard", pricePerHour: 150 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 18, endHour: 22, rateType: "off_peak", pricePerHour: 80 },
+      { dayOfWeek: [6, 0], startHour: 8, endHour: 22, rateType: "off_peak", pricePerHour: 60 },
+    ],
+  },
+  {
+    id: "rt002",
+    instrumentId: "inst002",
+    rates: [
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 8, endHour: 12, rateType: "peak", pricePerHour: 500 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 12, endHour: 14, rateType: "off_peak", pricePerHour: 200 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 14, endHour: 18, rateType: "standard", pricePerHour: 350 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 18, endHour: 22, rateType: "off_peak", pricePerHour: 200 },
+      { dayOfWeek: [6, 0], startHour: 8, endHour: 22, rateType: "off_peak", pricePerHour: 150 },
+    ],
+  },
+  {
+    id: "rt003",
+    instrumentId: "inst003",
+    rates: [
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 8, endHour: 12, rateType: "peak", pricePerHour: 120 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 12, endHour: 14, rateType: "off_peak", pricePerHour: 50 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 14, endHour: 18, rateType: "standard", pricePerHour: 90 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 18, endHour: 22, rateType: "off_peak", pricePerHour: 50 },
+      { dayOfWeek: [6, 0], startHour: 8, endHour: 22, rateType: "off_peak", pricePerHour: 40 },
+    ],
+  },
+  {
+    id: "rt004",
+    instrumentId: "inst004",
+    rates: [
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 8, endHour: 12, rateType: "peak", pricePerHour: 600 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 12, endHour: 14, rateType: "off_peak", pricePerHour: 250 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 14, endHour: 18, rateType: "standard", pricePerHour: 400 },
+      { dayOfWeek: [6, 0], startHour: 8, endHour: 22, rateType: "off_peak", pricePerHour: 200 },
+    ],
+  },
+  {
+    id: "rt005",
+    instrumentId: "inst005",
+    rates: [
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 8, endHour: 12, rateType: "peak", pricePerHour: 80 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 12, endHour: 14, rateType: "off_peak", pricePerHour: 30 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 14, endHour: 18, rateType: "standard", pricePerHour: 60 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 18, endHour: 22, rateType: "off_peak", pricePerHour: 30 },
+      { dayOfWeek: [6, 0], startHour: 8, endHour: 22, rateType: "off_peak", pricePerHour: 25 },
+    ],
+  },
+  {
+    id: "rt006",
+    instrumentId: "inst006",
+    rates: [
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 8, endHour: 12, rateType: "peak", pricePerHour: 60 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 12, endHour: 14, rateType: "off_peak", pricePerHour: 25 },
+      { dayOfWeek: [1, 2, 3, 4, 5], startHour: 14, endHour: 18, rateType: "standard", pricePerHour: 45 },
+      { dayOfWeek: [6, 0], startHour: 8, endHour: 22, rateType: "off_peak", pricePerHour: 20 },
+    ],
+  },
+]
+
+export const mockBookings: Booking[] = [
+  {
+    id: "bk001",
+    instrumentId: "inst002",
+    userId: "u001",
+    startTime: "2026-06-19T09:00:00",
+    endTime: "2026-06-19T12:00:00",
+    status: "active",
+    checkedIn: true,
+    createdAt: "2026-06-18T10:30:00",
+  },
+  {
+    id: "bk002",
+    instrumentId: "inst001",
+    userId: "u001",
+    startTime: "2026-06-20T14:00:00",
+    endTime: "2026-06-20T17:00:00",
+    status: "pending",
+    checkedIn: false,
+    createdAt: "2026-06-18T15:00:00",
+  },
+]
+
+export const mockWaitlist: WaitlistEntry[] = [
+  {
+    id: "wl001",
+    instrumentId: "inst002",
+    userId: "u001",
+    desiredStartTime: "2026-06-19T14:00:00",
+    desiredEndTime: "2026-06-19T17:00:00",
+    position: 1,
+    status: "waiting",
+  },
+  {
+    id: "wl002",
+    instrumentId: "inst004",
+    userId: "u001",
+    desiredStartTime: "2026-06-22T09:00:00",
+    desiredEndTime: "2026-06-22T12:00:00",
+    position: 3,
+    status: "waiting",
+  },
+]
+
+export const mockBills: Bill[] = [
+  {
+    id: "bill001",
+    bookingId: "bk_prev_001",
+    userId: "u001",
+    instrumentId: "inst001",
+    segments: [
+      { startTime: "2026-06-15T09:00:00", endTime: "2026-06-15T12:00:00", rateType: "peak", pricePerHour: 200, durationMinutes: 180, subtotal: 600 },
+      { startTime: "2026-06-15T12:00:00", endTime: "2026-06-15T13:30:00", rateType: "off_peak", pricePerHour: 80, durationMinutes: 90, subtotal: 120 },
+    ],
+    totalAmount: 720,
+    status: "paid",
+    createdAt: "2026-06-15T13:30:00",
+  },
+  {
+    id: "bill002",
+    bookingId: "bk_prev_002",
+    userId: "u001",
+    instrumentId: "inst003",
+    segments: [
+      { startTime: "2026-06-16T10:00:00", endTime: "2026-06-16T12:00:00", rateType: "peak", pricePerHour: 120, durationMinutes: 120, subtotal: 240 },
+      { startTime: "2026-06-16T12:00:00", endTime: "2026-06-16T14:00:00", rateType: "off_peak", pricePerHour: 50, durationMinutes: 120, subtotal: 100 },
+      { startTime: "2026-06-16T14:00:00", endTime: "2026-06-16T16:00:00", rateType: "standard", pricePerHour: 90, durationMinutes: 120, subtotal: 180 },
+    ],
+    totalAmount: 520,
+    status: "unpaid",
+    createdAt: "2026-06-16T16:00:00",
+  },
+  {
+    id: "bill003",
+    bookingId: "bk_prev_003",
+    userId: "u001",
+    instrumentId: "inst005",
+    segments: [
+      { startTime: "2026-06-17T14:00:00", endTime: "2026-06-17T18:00:00", rateType: "standard", pricePerHour: 60, durationMinutes: 240, subtotal: 240 },
+    ],
+    totalAmount: 240,
+    status: "unpaid",
+    createdAt: "2026-06-17T18:00:00",
+  },
+]
+
+export const mockNotifications: Notification[] = [
+  {
+    id: "ntf001",
+    type: "waitlist_confirm",
+    title: "候补补位通知",
+    message: "场发射扫描电镜 6月20日 09:00-12:00 时段有空位，请在10分钟内确认",
+    instrumentId: "inst002",
+    waitlistEntryId: "wl001",
+    read: false,
+    createdAt: "2026-06-19T08:30:00",
+    confirmDeadline: "2026-06-19T08:40:00",
+  },
+  {
+    id: "ntf002",
+    type: "booking_reminder",
+    title: "预约提醒",
+    message: "您预约的X射线衍射仪将于明天14:00开始，请准时签到",
+    instrumentId: "inst001",
+    bookingId: "bk002",
+    read: false,
+    createdAt: "2026-06-19T20:00:00",
+  },
+  {
+    id: "ntf003",
+    type: "bill_generated",
+    title: "账单已生成",
+    message: "您的高效液相色谱仪使用账单已生成，金额 ¥520.00",
+    instrumentId: "inst003",
+    read: true,
+    createdAt: "2026-06-16T16:00:00",
+  },
+  {
+    id: "ntf004",
+    type: "timeout_release",
+    title: "超时释放通知",
+    message: "李同学预约的场发射扫描电镜因超时未签到已自动释放，您已进入候补队列",
+    instrumentId: "inst002",
+    read: true,
+    createdAt: "2026-06-18T09:15:00",
+  },
+]
