@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom"
 import { ArrowLeft, FileText, CreditCard, Receipt } from "lucide-react"
 import { useStore } from "@/store"
 import { formatDate, formatMoney } from "@/utils/time"
+import { RATE_TYPE_LABELS, RATE_TYPE_COLORS } from "@/types"
+import type { RateType } from "@/types"
 
 export default function BillingBills() {
   const navigate = useNavigate()
@@ -47,6 +49,14 @@ export default function BillingBills() {
   const getInstrumentName = (instrumentId: string) =>
     instruments.find((i) => i.id === instrumentId)?.name ?? "未知仪器"
 
+  const summarizeSegments = (segments: { rateType: RateType; subtotal: number }[]) => {
+    const summary: Record<RateType, number> = { peak: 0, standard: 0, off_peak: 0 }
+    for (const seg of segments) {
+      summary[seg.rateType] += seg.subtotal
+    }
+    return summary
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
       <div className="sticky top-0 z-10 flex items-center gap-3 bg-white px-4 py-3 shadow-sm">
@@ -89,42 +99,65 @@ export default function BillingBills() {
       </div>
 
       <div className="px-4 mt-3 flex flex-col gap-3">
-        {filteredBills.map((bill) => (
-          <button
-            key={bill.id}
-            onClick={() => navigate(`/billing/bills/${bill.id}`)}
-            className="w-full rounded-xl bg-white p-4 shadow-sm text-left"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <Receipt className="h-4 w-4 text-gray-400" />
-                <span className="text-sm text-gray-700">
-                  {getInstrumentName(bill.instrumentId)}
+        {filteredBills.map((bill) => {
+          const summary = summarizeSegments(bill.segments)
+          return (
+            <button
+              key={bill.id}
+              onClick={() => navigate(`/billing/bills/${bill.id}`)}
+              className="w-full rounded-xl bg-white p-4 shadow-sm text-left"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm text-gray-700">
+                    {getInstrumentName(bill.instrumentId)}
+                  </span>
+                </div>
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    bill.status === "paid"
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-red-50 text-red-700"
+                  }`}
+                >
+                  {bill.status === "paid" ? "已付" : "未付"}
                 </span>
               </div>
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  bill.status === "paid"
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-red-50 text-red-700"
-                }`}
-              >
-                {bill.status === "paid" ? "已付" : "未付"}
-              </span>
-            </div>
-            <div className="mt-2 flex items-end justify-between">
-              <div>
-                <div className="text-xs text-gray-400">{formatDate(bill.createdAt)}</div>
-                <div className="mt-0.5 text-xs text-gray-400">
-                  含{bill.segments.length}段计费
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(Object.keys(summary) as RateType[]).map((rt) =>
+                  summary[rt] > 0 ? (
+                    <span
+                      key={rt}
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
+                      style={{
+                        backgroundColor: `${RATE_TYPE_COLORS[rt]}1A`,
+                        color: RATE_TYPE_COLORS[rt],
+                      }}
+                    >
+                      <span
+                        className="h-1.5 w-1.5 rounded-full"
+                        style={{ backgroundColor: RATE_TYPE_COLORS[rt] }}
+                      />
+                      {RATE_TYPE_LABELS[rt]} {formatMoney(summary[rt])}
+                    </span>
+                  ) : null
+                )}
+              </div>
+              <div className="mt-3 flex items-end justify-between">
+                <div>
+                  <div className="text-xs text-gray-400">{formatDate(bill.createdAt)}</div>
+                  <div className="mt-0.5 text-xs text-gray-400">
+                    含{bill.segments.length}段计费
+                  </div>
+                </div>
+                <div className="text-xl font-bold text-gray-900">
+                  {formatMoney(bill.totalAmount)}
                 </div>
               </div>
-              <div className="text-xl font-bold text-gray-900">
-                {formatMoney(bill.totalAmount)}
-              </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          )
+        })}
         {filteredBills.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-gray-400">
             <FileText className="mb-2 h-10 w-10" />

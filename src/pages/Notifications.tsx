@@ -1,8 +1,10 @@
 import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, Clock, Calendar, AlertTriangle, FileText, Bell } from "lucide-react"
+import { ArrowLeft, Clock, Calendar, AlertTriangle, FileText, Bell, CheckCircle2, XCircle, Clock8 } from "lucide-react"
 import { useStore } from "@/store"
 import { getRelativeTime } from "@/utils/time"
+import { RATE_TYPE_LABELS } from "@/types"
+import type { WaitlistEntry } from "@/types"
 
 type FilterTab = "all" | "unread"
 
@@ -27,11 +29,31 @@ function getDateGroup(isoString: string): string {
 export default function Notifications() {
   const navigate = useNavigate()
   const notifications = useStore((s) => s.notifications)
+  const waitlist = useStore((s) => s.waitlist)
   const markNotificationRead = useStore((s) => s.markNotificationRead)
   const confirmWaitlist = useStore((s) => s.confirmWaitlist)
   const declineWaitlist = useStore((s) => s.declineWaitlist)
 
   const [activeTab, setActiveTab] = useState<FilterTab>("all")
+
+  const getWaitlistStatus = (waitlistEntryId?: string): WaitlistEntry["status"] | null => {
+    if (!waitlistEntryId) return null
+    return waitlist.find((w) => w.id === waitlistEntryId)?.status ?? null
+  }
+
+  const getWaitlistStatusDisplay = (status: WaitlistEntry["status"] | null) => {
+    if (!status) return null
+    switch (status) {
+      case "confirmed":
+        return { label: "已确认", Icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" }
+      case "expired":
+        return { label: "已过期", Icon: Clock8, color: "text-gray-500", bg: "bg-gray-50" }
+      case "cancelled":
+        return { label: "已放弃", Icon: XCircle, color: "text-red-500", bg: "bg-red-50" }
+      default:
+        return null
+    }
+  }
 
   const filtered = useMemo(() => {
     const sorted = [...notifications].sort(
@@ -116,11 +138,14 @@ export default function Notifications() {
               <div className="flex flex-col gap-2">
                 {group.items.map((n) => {
                   const Icon = TYPE_ICON[n.type] || Bell
+                  const wlStatus = getWaitlistStatus(n.waitlistEntryId)
+                  const wlDisplay = getWaitlistStatusDisplay(wlStatus)
+                  const isHandled = !!wlDisplay
                   return (
                     <div
                       key={n.id}
                       onClick={() => handleClick(n.id)}
-                      className="rounded-xl bg-white p-4 shadow-sm cursor-pointer active:bg-gray-50"
+                      className={`rounded-xl bg-white p-4 shadow-sm cursor-pointer active:bg-gray-50 ${isHandled ? "opacity-75" : ""}`}
                     >
                       <div className="flex gap-3">
                         <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
@@ -146,6 +171,12 @@ export default function Notifications() {
                           <div className="flex items-start justify-between gap-2">
                             <h3 className="text-sm font-bold text-gray-900">{n.title}</h3>
                             <div className="flex items-center gap-1.5 shrink-0">
+                              {wlDisplay && (
+                                <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-medium ${wlDisplay.bg} ${wlDisplay.color}`}>
+                                  <wlDisplay.Icon className="h-3 w-3" />
+                                  {wlDisplay.label}
+                                </span>
+                              )}
                               {!n.read && (
                                 <span className="h-2 w-2 rounded-full bg-blue-500" />
                               )}
@@ -153,7 +184,7 @@ export default function Notifications() {
                             </div>
                           </div>
                           <p className="mt-1 text-xs text-gray-500 leading-relaxed">{n.message}</p>
-                          {n.type === "waitlist_confirm" && n.waitlistEntryId && (
+                          {n.type === "waitlist_confirm" && n.waitlistEntryId && !isHandled && (
                             <div className="mt-2.5 flex gap-2" onClick={(e) => e.stopPropagation()}>
                               <button
                                 onClick={() => handleConfirm(n.waitlistEntryId!, n.id)}

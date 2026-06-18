@@ -62,7 +62,7 @@ interface AppState {
   processTimeouts: () => void
   processWaitlistNotifications: () => void
   hasTimeConflict: (instrumentId: string, start: Date, end: Date, excludeBookingId?: string) => boolean
-  notifyNextWaitlist: (instrumentId: string) => boolean
+  notifyNextWaitlist: (instrumentId: string, rangeStart?: string, rangeEnd?: string) => boolean
   getWaitlistCount: (instrumentId: string) => number
 }
 
@@ -149,14 +149,23 @@ export const useStore = create<AppState>((set, get) => ({
       ),
     })),
 
-  notifyNextWaitlist: (instrumentId) => {
+  notifyNextWaitlist: (instrumentId, rangeStart, rangeEnd) => {
     const { waitlist, instruments } = get()
     const instrument = instruments.find((i) => i.id === instrumentId)
 
     const waiting = waitlist
-      .filter(
-        (w) => w.instrumentId === instrumentId && w.status === "waiting"
-      )
+      .filter((w) => {
+        if (w.instrumentId !== instrumentId || w.status !== "waiting") return false
+        if (rangeStart && rangeEnd) {
+          return timeRangesOverlap(
+            new Date(w.desiredStartTime),
+            new Date(w.desiredEndTime),
+            new Date(rangeStart),
+            new Date(rangeEnd)
+          )
+        }
+        return true
+      })
       .sort((a, b) => a.position - b.position)
 
     if (waiting.length === 0) return false
@@ -196,7 +205,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   confirmWaitlist: (waitlistId) => {
-    const { waitlist, bookings, rateTables, currentUser, hasTimeConflict } = get()
+    const { waitlist, bookings, currentUser, hasTimeConflict } = get()
     const entry = waitlist.find((w) => w.id === waitlistId)
     if (!entry || entry.status === "confirmed" || entry.status === "expired" || entry.status === "cancelled") return
 
@@ -209,7 +218,7 @@ export const useStore = create<AppState>((set, get) => ({
           w.id === waitlistId ? { ...w, status: "expired" as const } : w
         ),
       }))
-      get().notifyNextWaitlist(entry.instrumentId)
+      get().notifyNextWaitlist(entry.instrumentId, entry.desiredStartTime, entry.desiredEndTime)
       return
     }
 
@@ -224,29 +233,11 @@ export const useStore = create<AppState>((set, get) => ({
       createdAt: new Date().toISOString(),
     }
 
-    const rateTable = rateTables.find((rt) => rt.instrumentId === entry.instrumentId)
-    const segments = rateTable
-      ? calculateBillSegments(start, end, rateTable.rates)
-      : []
-    const totalAmount = segments.reduce((sum, seg) => sum + seg.subtotal, 0)
-
-    const bill: Bill = {
-      id: `bill_${Date.now()}`,
-      bookingId: booking.id,
-      userId: entry.userId,
-      instrumentId: entry.instrumentId,
-      segments,
-      totalAmount: Math.round(totalAmount * 100) / 100,
-      status: "unpaid",
-      createdAt: new Date().toISOString(),
-    }
-
     set((s) => ({
       waitlist: s.waitlist.map((w) =>
         w.id === waitlistId ? { ...w, status: "confirmed" as const } : w
       ),
       bookings: [...s.bookings, booking],
-      bills: [...s.bills, bill],
     }))
 
     const remaining = get().waitlist.filter(
@@ -268,7 +259,7 @@ export const useStore = create<AppState>((set, get) => ({
       ),
     }))
 
-    get().notifyNextWaitlist(entry.instrumentId)
+    get().notifyNextWaitlist(entry.instrumentId, entry.desiredStartTime, entry.desiredEndTime)
   },
 
   addInstrument: (instrument) => {
@@ -375,7 +366,7 @@ export const useStore = create<AppState>((set, get) => ({
       ),
     }))
 
-    notifyNextWaitlist(booking.instrumentId)
+    notifyNextWaitlist(booking.instrumentId, booking.startTime, booking.endTime)
   },
 
   cancelWaitlist: (waitlistId) => {
@@ -404,7 +395,7 @@ export const useStore = create<AppState>((set, get) => ({
     })
 
     if (wasNotified) {
-      get().notifyNextWaitlist(entry.instrumentId)
+      get().notifyNextWaitlist(entry.instrumentId, entry.desiredStartTime, entry.desiredEndTime)
     }
   },
 
@@ -440,7 +431,7 @@ export const useStore = create<AppState>((set, get) => ({
           ],
         }))
 
-        notifyNextWaitlist(booking.instrumentId)
+        notifyNextWaitlist(booking.instrumentId, booking.startTime, booking.endTime)
       }
     })
   },
@@ -457,7 +448,7 @@ export const useStore = create<AppState>((set, get) => ({
             w.id === entry.id ? { ...w, status: "expired" as const } : w
           ),
         }))
-        notifyNextWaitlist(entry.instrumentId)
+        notifyNextWaitlist(entry.instrumentId, entry.desiredStartTime, entry.desiredEndTime)
       }
     })
   },
