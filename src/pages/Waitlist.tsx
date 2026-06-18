@@ -4,13 +4,14 @@ import { ArrowLeft, Clock, Users, X, Check } from "lucide-react"
 import { useStore } from "@/store"
 import { formatTime, formatDateTime } from "@/utils/time"
 
-type FilterTab = "waiting" | "notified" | "confirmed" | "cancelled"
+type FilterTab = "waiting" | "notified" | "confirmed" | "cancelled" | "expired"
 
 const TABS: { key: FilterTab; label: string }[] = [
   { key: "waiting", label: "等待中" },
   { key: "notified", label: "已通知" },
   { key: "confirmed", label: "已确认" },
-  { key: "cancelled", label: "已取消" },
+  { key: "cancelled", label: "已放弃" },
+  { key: "expired", label: "已过期" },
 ]
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -18,7 +19,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   notified: { label: "已通知", color: "bg-amber-50 text-amber-700" },
   confirmed: { label: "已确认", color: "bg-emerald-50 text-emerald-700" },
   expired: { label: "已过期", color: "bg-gray-100 text-gray-500" },
-  cancelled: { label: "已取消", color: "bg-gray-100 text-gray-500" },
+  cancelled: { label: "已放弃", color: "bg-red-50 text-red-600" },
 }
 
 function CountdownTimer({ deadline }: { deadline: string }) {
@@ -61,10 +62,7 @@ export default function Waitlist() {
 
   const myWaitlist = waitlist.filter((w) => w.userId === currentUser.id)
 
-  const filtered = myWaitlist.filter((w) => {
-    if (activeTab === "cancelled") return w.status === "cancelled" || w.status === "expired"
-    return w.status === activeTab
-  })
+  const filtered = myWaitlist.filter((w) => w.status === activeTab)
 
   const handleConfirm = (entry: typeof myWaitlist[0]) => {
     confirmWaitlist(entry.id)

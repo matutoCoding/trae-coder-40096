@@ -113,12 +113,14 @@ export const useStore = create<AppState>((set, get) => ({
 
   addWaitlistEntry: (entry) => {
     const { waitlist } = get()
-    const instrumentEntries = waitlist.filter(
+    const slotEntries = waitlist.filter(
       (w) =>
         w.instrumentId === entry.instrumentId &&
+        w.desiredStartTime === entry.desiredStartTime &&
+        w.desiredEndTime === entry.desiredEndTime &&
         (w.status === "waiting" || w.status === "notified")
     )
-    const nextPosition = instrumentEntries.length + 1
+    const nextPosition = slotEntries.length + 1
     const newEntry = { ...entry, position: nextPosition }
     set((s) => ({ waitlist: [...s.waitlist, newEntry] }))
     return nextPosition
@@ -157,12 +159,7 @@ export const useStore = create<AppState>((set, get) => ({
       .filter((w) => {
         if (w.instrumentId !== instrumentId || w.status !== "waiting") return false
         if (rangeStart && rangeEnd) {
-          return timeRangesOverlap(
-            new Date(w.desiredStartTime),
-            new Date(w.desiredEndTime),
-            new Date(rangeStart),
-            new Date(rangeEnd)
-          )
+          return w.desiredStartTime === rangeStart && w.desiredEndTime === rangeEnd
         }
         return true
       })
@@ -241,7 +238,11 @@ export const useStore = create<AppState>((set, get) => ({
     }))
 
     const remaining = get().waitlist.filter(
-      (w) => w.instrumentId === entry.instrumentId && w.status === "waiting"
+      (w) =>
+        w.instrumentId === entry.instrumentId &&
+        w.desiredStartTime === entry.desiredStartTime &&
+        w.desiredEndTime === entry.desiredEndTime &&
+        w.status === "waiting"
     )
     remaining.forEach((w, idx) => {
       get().updateWaitlistEntry(w.id, { position: idx + 1 })
@@ -255,9 +256,23 @@ export const useStore = create<AppState>((set, get) => ({
 
     set((s) => ({
       waitlist: s.waitlist.map((w) =>
-        w.id === waitlistId ? { ...w, status: "expired" as const } : w
+        w.id === waitlistId ? { ...w, status: "cancelled" as const } : w
       ),
     }))
+
+    const remaining = get().waitlist
+      .filter(
+        (w) =>
+          w.instrumentId === entry.instrumentId &&
+          w.desiredStartTime === entry.desiredStartTime &&
+          w.desiredEndTime === entry.desiredEndTime &&
+          (w.status === "waiting" || w.status === "notified")
+      )
+      .sort((a, b) => a.position - b.position)
+
+    remaining.forEach((w, idx) => {
+      get().updateWaitlistEntry(w.id, { position: idx + 1 })
+    })
 
     get().notifyNextWaitlist(entry.instrumentId, entry.desiredStartTime, entry.desiredEndTime)
   },
@@ -386,6 +401,8 @@ export const useStore = create<AppState>((set, get) => ({
       .filter(
         (w) =>
           w.instrumentId === entry.instrumentId &&
+          w.desiredStartTime === entry.desiredStartTime &&
+          w.desiredEndTime === entry.desiredEndTime &&
           (w.status === "waiting" || w.status === "notified")
       )
       .sort((a, b) => a.position - b.position)
