@@ -186,6 +186,7 @@ export const mockWaitlist: WaitlistEntry[] = [
     desiredEndTime: "2026-06-19T17:00:00",
     position: 1,
     status: "waiting",
+    createdAt: "2026-06-19T10:15:00",
   },
   {
     id: "wl002",
@@ -195,6 +196,7 @@ export const mockWaitlist: WaitlistEntry[] = [
     desiredEndTime: "2026-06-22T12:00:00",
     position: 3,
     status: "waiting",
+    createdAt: "2026-06-18T16:20:00",
   },
 ]
 

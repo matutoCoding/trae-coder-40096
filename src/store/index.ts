@@ -121,7 +121,7 @@ export const useStore = create<AppState>((set, get) => ({
         (w.status === "waiting" || w.status === "notified")
     )
     const nextPosition = slotEntries.length + 1
-    const newEntry = { ...entry, position: nextPosition }
+    const newEntry = { ...entry, position: nextPosition, createdAt: entry.createdAt || new Date().toISOString() }
     set((s) => ({ waitlist: [...s.waitlist, newEntry] }))
     return nextPosition
   },
@@ -202,9 +202,19 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   confirmWaitlist: (waitlistId) => {
-    const { waitlist, bookings, currentUser, hasTimeConflict } = get()
+    const { waitlist, bookings, currentUser, hasTimeConflict, processWaitlistNotifications } = get()
+    processWaitlistNotifications()
     const entry = waitlist.find((w) => w.id === waitlistId)
     if (!entry || entry.status === "confirmed" || entry.status === "expired" || entry.status === "cancelled") return
+    if (entry.status === "notified" && entry.confirmDeadline && new Date() >= new Date(entry.confirmDeadline)) {
+      set((s) => ({
+        waitlist: s.waitlist.map((w) =>
+          w.id === waitlistId ? { ...w, status: "expired" as const } : w
+        ),
+      }))
+      get().notifyNextWaitlist(entry.instrumentId, entry.desiredStartTime, entry.desiredEndTime)
+      return
+    }
 
     const start = new Date(entry.desiredStartTime)
     const end = new Date(entry.desiredEndTime)
@@ -470,3 +480,56 @@ export const useStore = create<AppState>((set, get) => ({
     })
   },
 }))
+
+const PERSIST_KEY = "trae_instr_shared_state_v1"
+const PERSIST_FIELDS = [
+  "instruments",
+  "rateTables",
+  "bookings",
+  "waitlist",
+  "bills",
+  "notifications",
+] as const
+
+type PersistedState = Pick<AppState, typeof PERSIST_FIELDS[number]>
+
+function loadPersistedState(): Partial<PersistedState> | null {
+  if (typeof window === "undefined" || !window.localStorage) return null
+  try {
+    const raw = window.localStorage.getItem(PERSIST_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as PersistedState
+  } catch {
+    return null
+  }
+}
+
+function savePersistedState(state: PersistedState) {
+  if (typeof window === "undefined" || !window.localStorage) return
+  try {
+    const toSave: Record<string, unknown> = {}
+    for (const k of PERSIST_FIELDS) {
+      toSave[k] = state[k]
+    }
+    window.localStorage.setItem(PERSIST_KEY, JSON.stringify(toSave))
+  } catch {
+    // ignore
+  }
+}
+
+const persisted = loadPersistedState()
+if (persisted) {
+  useStore.setState((s) => ({
+    ...s,
+    instruments: persisted.instruments ?? s.instruments,
+    rateTables: persisted.rateTables ?? s.rateTables,
+    bookings: persisted.bookings ?? s.bookings,
+    waitlist: persisted.waitlist ?? s.waitlist,
+    bills: persisted.bills ?? s.bills,
+    notifications: persisted.notifications ?? s.notifications,
+  }))
+}
+
+useStore.subscribe((state) => {
+  savePersistedState(state as PersistedState)
+})

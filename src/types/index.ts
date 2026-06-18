@@ -39,6 +39,7 @@ export interface WaitlistEntry {
   status: "waiting" | "notified" | "confirmed" | "expired" | "cancelled"
   notifiedAt?: string
   confirmDeadline?: string
+  createdAt?: string
 }
 
 export interface RateTable {

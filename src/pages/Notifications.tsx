@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft, Clock, Calendar, AlertTriangle, FileText, Bell, CheckCircle2, XCircle, Clock8 } from "lucide-react"
 import { useStore } from "@/store"
@@ -33,8 +33,18 @@ export default function Notifications() {
   const markNotificationRead = useStore((s) => s.markNotificationRead)
   const confirmWaitlist = useStore((s) => s.confirmWaitlist)
   const declineWaitlist = useStore((s) => s.declineWaitlist)
+  const processWaitlistNotifications = useStore((s) => s.processWaitlistNotifications)
 
   const [activeTab, setActiveTab] = useState<FilterTab>("all")
+  const [, forceTick] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      processWaitlistNotifications()
+      forceTick((x) => x + 1)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [processWaitlistNotifications])
 
   const getWaitlistStatus = (waitlistEntryId?: string): WaitlistEntry["status"] | null => {
     if (!waitlistEntryId) return null

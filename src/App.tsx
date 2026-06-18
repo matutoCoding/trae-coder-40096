@@ -12,6 +12,7 @@ import BillingRates from "@/pages/BillingRates"
 import BillingBills from "@/pages/BillingBills"
 import BillDetail from "@/pages/BillDetail"
 import AdminInstruments from "@/pages/AdminInstruments"
+import AdminWaitlist from "@/pages/AdminWaitlist"
 import Profile from "@/pages/Profile"
 import { useBackgroundTasks } from "@/hooks/useBackgroundTasks"
 
@@ -33,6 +34,7 @@ function AppContent() {
         <Route path="/billing/bills" element={<BillingBills />} />
         <Route path="/billing/bills/:id" element={<BillDetail />} />
         <Route path="/admin/instruments" element={<AdminInstruments />} />
+        <Route path="/admin/waitlist" element={<AdminWaitlist />} />
         <Route path="/profile" element={<Profile />} />
       </Route>
     </Routes>

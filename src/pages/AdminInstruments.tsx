@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, Plus, Edit, Trash2, Save, Settings, DollarSign } from "lucide-react"
+import { ArrowLeft, Plus, Edit, Trash2, Save, Settings, DollarSign, Users } from "lucide-react"
 import { useStore } from "@/store"
 import { INSTRUMENT_CATEGORIES } from "@/types"
 import type { Instrument } from "@/types"
@@ -311,6 +311,13 @@ export default function AdminInstruments() {
                     >
                       <Settings className="h-3.5 w-3.5" />
                       配置费率
+                    </button>
+                    <button
+                      onClick={() => navigate(`/admin/waitlist?instrumentId=${inst.id}`)}
+                      className="flex items-center gap-1 rounded-lg border border-[#1A365D] bg-white px-3 py-1.5 text-xs text-[#1A365D]"
+                    >
+                      <Users className="h-3.5 w-3.5" />
+                      候补队列
                     </button>
                   </div>
                 </div>

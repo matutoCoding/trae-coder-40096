@@ -8,6 +8,10 @@ export function formatDate(isoString: string): string {
   return `${d.getMonth() + 1}月${d.getDate()}日`
 }
 
+export function formatDateInput(d: Date): string {
+  return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`
+}
+
 export function formatDateTime(isoString: string): string {
   return `${formatDate(isoString)} ${formatTime(isoString)}`
 }

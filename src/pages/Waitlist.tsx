@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft, Clock, Users, X, Check } from "lucide-react"
 import { useStore } from "@/store"
@@ -22,7 +22,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   cancelled: { label: "已放弃", color: "bg-red-50 text-red-600" },
 }
 
-function CountdownTimer({ deadline }: { deadline: string }) {
+function CountdownTimer({ deadline, onExpire }: { deadline: string; onExpire?: () => void }) {
   const [remaining, setRemaining] = useState(() => {
     const diff = new Date(deadline).getTime() - Date.now()
     return Math.max(0, diff)
@@ -30,8 +30,10 @@ function CountdownTimer({ deadline }: { deadline: string }) {
 
   const update = useCallback(() => {
     const diff = new Date(deadline).getTime() - Date.now()
-    setRemaining(Math.max(0, diff))
-  }, [deadline])
+    const newRemaining = Math.max(0, diff)
+    setRemaining(newRemaining)
+    if (newRemaining === 0 && onExpire) onExpire()
+  }, [deadline, onExpire])
 
   useEffect(() => {
     update()
@@ -58,7 +60,24 @@ export default function Waitlist() {
   const confirmWaitlist = useStore((s) => s.confirmWaitlist)
   const declineWaitlist = useStore((s) => s.declineWaitlist)
 
+  const processWaitlistNotifications = useStore((s) => s.processWaitlistNotifications)
+
   const [activeTab, setActiveTab] = useState<FilterTab>("waiting")
+
+  const [, forceTick] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      processWaitlistNotifications()
+      forceTick((x) => x + 1)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [processWaitlistNotifications])
+
+  const isDeadlinePassed = (deadline?: string) => {
+    if (!deadline) return false
+    return new Date() >= new Date(deadline)
+  }
 
   const myWaitlist = waitlist.filter((w) => w.userId === currentUser.id)
 
@@ -153,7 +172,7 @@ export default function Waitlist() {
                       取消候补
                     </button>
                   )}
-                  {entry.status === "notified" && (
+                  {entry.status === "notified" && !isDeadlinePassed(entry.confirmDeadline) && (
                     <>
                       <button
                         onClick={() => handleConfirm(entry)}
