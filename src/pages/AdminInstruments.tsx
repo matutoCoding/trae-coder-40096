@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, Plus, Edit, Trash2, Save } from "lucide-react"
+import { ArrowLeft, Plus, Edit, Trash2, Save, Settings, DollarSign } from "lucide-react"
 import { useStore } from "@/store"
 import { INSTRUMENT_CATEGORIES } from "@/types"
 import type { Instrument } from "@/types"
@@ -297,13 +297,20 @@ export default function AdminInstruments() {
                         : "无"}
                     </p>
                   </div>
-                  <div className="mt-2 flex gap-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     <button
                       onClick={() => startEdit(inst)}
                       className="flex items-center gap-1 rounded-lg bg-[#1A365D] px-3 py-1.5 text-xs text-white"
                     >
                       <Edit className="h-3.5 w-3.5" />
                       编辑
+                    </button>
+                    <button
+                      onClick={() => navigate(`/billing/rates?instrumentId=${inst.id}`)}
+                      className="flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs text-amber-700"
+                    >
+                      <Settings className="h-3.5 w-3.5" />
+                      配置费率
                     </button>
                   </div>
                 </div>

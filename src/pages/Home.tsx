@@ -122,7 +122,7 @@ export default function Home() {
       <section className="px-4 mt-5">
         <div className="grid grid-cols-3 gap-3">
           <button
-            onClick={() => navigate("/bookings")}
+            onClick={() => navigate("/booking")}
             className="rounded-lg bg-white shadow p-3 flex flex-col items-center gap-1"
           >
             <Zap className="w-5 h-5 text-blue-600" />
@@ -138,7 +138,7 @@ export default function Home() {
             <span className="text-xs text-gray-500">候补排队</span>
           </button>
           <button
-            onClick={() => navigate("/bills")}
+            onClick={() => navigate("/billing/bills")}
             className="rounded-lg bg-white shadow p-3 flex flex-col items-center gap-1"
           >
             <Star className="w-5 h-5 text-red-500" />

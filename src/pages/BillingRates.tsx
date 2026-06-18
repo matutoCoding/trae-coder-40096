@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { ArrowLeft, Clock, Save, BarChart3 } from "lucide-react"
 import { useStore } from "@/store"
 import { getRateTypeLabel, getRateTypeBgColor, calculateBillSegments, calculateTotalAmount } from "@/utils/billing"
@@ -44,11 +44,13 @@ const TIME_OPTIONS = generateTimeOptions()
 
 export default function BillingRates() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const instruments = useStore((s) => s.instruments)
   const rateTables = useStore((s) => s.rateTables)
   const updateRateTable = useStore((s) => s.updateRateTable)
 
-  const [selectedInstrumentId, setSelectedInstrumentId] = useState(instruments[0]?.id ?? "")
+  const initialInstrumentId = searchParams.get("instrumentId") || instruments[0]?.id || ""
+  const [selectedInstrumentId, setSelectedInstrumentId] = useState(initialInstrumentId)
   const rateTable = rateTables.find((rt) => rt.instrumentId === selectedInstrumentId)
 
   const [editedRates, setEditedRates] = useState<RateTier[]>([])
